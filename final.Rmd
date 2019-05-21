@@ -1,0 +1,357 @@
+---
+title: "Final Project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### 300 word summary of data science pipeline
+# The Data Science Pipeline
+
+In the technological revolution we are currently experiencing, data is fuel - a ubiquitous, accessible, power source driving our society and modern innovations. The ability to extract, parse, interpret, visualize, and manipulate data could be likened to a modern-day superpower. Data scientists and statisticians work every day on challenges ranging from self-driving cars, to national security, to intelligent financial investments, or even developing a cure for cancer. 
+
+We can also use it for fun to explore our interests or enhance our knowledge on a subject we want to learn more about. Many have developed their own tools for fantasy baseball and football leagues to better draft their teams using the plethora of open source data available online and a few basic data science tools.  It's a tool for virtually any problem and an asset in any industry. 
+
+Now that you're convinced that this is an important and relevant skill in your life, let's talk about how to explore the exciting field of Data Science! The basic pipeline is as follows: 
+
+1.	Data Curation, Parsing, Management
+2.	Exploratory Data Analysis
+3.	Hypothesis Testing & Machine Learning
+4.	Uncovering meaningful insights 
+
+These steps are loosely ordered, with many recurring, and often overlapping with one another- so don't get too locked into the order. So, how do you apply this to a project of your interests? 
+
+What better way to learn than to walk through an example? I picked a subject matter of nearly universal interest to explore- movies! Everybody's been to the movies, and everyone has an opinion to share on them. There are so many exciting angles to explore here from critic vs. audience perception, to the effect of genre on success, to how we choose to measure success of this universally beloved art form. Using an IMDB dataset provided by Kaggle, a great resource for datasets of any category, I walk through the fundamental steps of a data science project in the steps below:
+
+
+
+
+
+### 100 words
+# 1. Data Curation, Parsing, and Management
+
+When people think about statisticians and data scientists developing revolutionary technologies, they often start by thinking about machine learning and AI - but this is skipping a lot of key steps. You'll find that you can actually run some basic but very intelligent ML algorithms and analysis with very little experience assuming you have a large and properly curated dataset. So let's begin there! Our dataset for the IMDB movies example was acquired from Kaggle.com at the following web address: https://www.kaggle.com/orgesleka/imdbmovies. 
+
+This file was provided as a csv, a common form for publicly available datasets. Some other popular data formats you might encounter include sqlite and JSON which require their own form of parsing. Informal data, such as the information available on public web pages can be acquired via web scraping, web crawling, and other more advanced techniques. If you're interested in learning more about this, the following site has an in-depth beginner guide: https://github.com/yusuzech/r-web-scraping-cheat-sheet
+
+Because we are using a formally created dataset, we can simply download the file and formalize it using the read_csv() built in function for R. The built-in libraries we need for these type of built-in functions are included below. You may need to install these packages on your device to run this on your own computer. Now we can curate this dataset for our purposes.
+
+
+## Load libraries and URL
+```{r load_data, message=FALSE}
+library(RSQLite)
+library(tidyr)
+library(tidyverse)
+library(broom)
+
+imdb_tab <- read_csv("IMDB-Movie-Data.csv")
+imdb_tab %>% slice(1:10)
+
+```
+So, what is one angle we might want to explore and gain insights on using this dataset? There is a column categorizing the various genres of all these movies. How does the genre of a movie impact it's revenue earnings in the box office? Is there a pattern of certain genres receiving better movie critic reviews (Metascore)? How about audience reviews (IMDB Rating)? This seems like an interesting category to explore further! 
+
+The data as it exists includes a long comma separated string of applicable genres for each movie. We don't want to factor or group our data based on a list of genres, but rather on one specific genre. So let's parse these strings, separating by commas, and create a new column for each genre that simply provides a binary True/False of whether or not the movie falls under this category. I've selected the following list of genres as a relevant set we may want to explore further: Action, Adventure, History, Fantasy, Comedy, Romance, Crime and Western.
+
+
+```{r pipeline4, warning=FALSE}
+## add new columns incluuding number of genres
+imdb_tab$Num_Genres<-imdb_tab$Genre
+imdb_tab$Num_Genres<- str_count(as.character(imdb_tab$Num_Genres),",")+1
+head(imdb_tab)
+```
+
+
+```{r pipeline5, warning=FALSE}
+## Make new dataframe for each specific genre to run comparisons (ie. romance average revenue compared to action)
+
+imdb_tab$action <-imdb_tab$Genre
+# Add true or false to Action column based on whether or not the regex pattern of "Action" is in the inital Genres col
+imdb_tab$action <- ifelse(grepl(pattern = "Action", x = imdb_tab$action),
+                   yes = TRUE, no = FALSE)
+
+# Repeat above steps for all other movie genres in our set
+
+imdb_tab$adventure <-imdb_tab$Genre
+imdb_tab$adventure <- ifelse(grepl(pattern = "Adventure", x = imdb_tab$adventure),
+                   yes = TRUE, no = FALSE)
+
+
+imdb_tab$fantasy <-imdb_tab$Genre
+imdb_tab$fantasy <- ifelse(grepl(pattern = "Fantasy", x = imdb_tab$fantasy),
+                   yes = TRUE, no = FALSE)
+
+imdb_tab$comedy <-imdb_tab$Genre
+imdb_tab$comedy <- ifelse(grepl(pattern = "Comedy", x = imdb_tab$comedy),
+                   yes = TRUE, no = FALSE)
+
+
+imdb_tab$romance <-imdb_tab$Genre
+imdb_tab$romance <- ifelse(grepl(pattern = "Romance", x = imdb_tab$romance),
+                   yes = TRUE, no = FALSE)
+
+
+imdb_tab$history <-imdb_tab$Genre
+imdb_tab$history <- ifelse(grepl(pattern = "History", x = imdb_tab$history),
+                   yes = TRUE, no = FALSE)
+
+imdb_tab$animation <-imdb_tab$Genre
+imdb_tab$animation <- ifelse(grepl(pattern = "Animation", x = imdb_tab$animation),
+                   yes = TRUE, no = FALSE)
+
+imdb_tab$crime <-imdb_tab$Genre
+imdb_tab$crime <- ifelse(grepl(pattern = "Crime", x = imdb_tab$crime),
+                   yes = TRUE, no = FALSE)
+
+imdb_tab$western <-imdb_tab$Genre
+imdb_tab$western <- ifelse(grepl(pattern = "Western", x = imdb_tab$western),
+                   yes = TRUE, no = FALSE)
+
+# Display head of new data frame with additional columns
+head(imdb_tab)
+
+```
+
+
+#2. Exploratory Data Analysis 
+ 
+In this section, we want to do some exploratory data analysis based on our curated and styled dataset from above. Let's address some of the questions we asked earlier in the project:
+
+####How does the genre of a movie impact it's revenue earnings in the box office? 
+In order to address this question, we need to filter our dataframe by genre and calculate the Average Revenue scores for each one. Once we have done this for all the genres in our set we add them to a new dataframe, and compare them against one another to identify relationships. The code below does some basic filtering and summarizing techniques to accomplish this. 
+
+
+#bar plot of revenue, rating, metascore by genre action,history, adventure, fantasy, comedy, romance, crime western
+## relationsihp between revenue and metascore vs rating
+
+```{r pipeline7}
+imdb_clean<- imdb_tab%>% 
+  drop_na(`Revenue (Millions)`, Rating, Metascore)
+imdb_clean
+
+action<- imdb_clean %>%
+    filter(action == TRUE) %>%
+    summarize(Revenue_Avg = mean(`Revenue (Millions)`), Rating_Avg = mean(Rating),
+              Metascore_Avg = mean(Metascore))%>%
+    mutate(Genre = "Action")
+
+history<- imdb_clean %>%
+    filter(history == TRUE) %>%
+    summarize(Revenue_Avg = mean(`Revenue (Millions)`), Rating_Avg = mean(Rating),
+              Metascore_Avg = mean(Metascore))%>%
+    mutate(Genre = "History")
+
+adventure<- imdb_clean %>%
+    filter(adventure== TRUE) %>%
+    summarize(Revenue_Avg = mean(`Revenue (Millions)`), Rating_Avg = mean(Rating),
+              Metascore_Avg = mean(Metascore)) %>%
+    mutate(Genre = "Adventure")
+
+fantasy<- imdb_clean %>%
+    filter(fantasy== TRUE) %>%
+    summarize(Revenue_Avg = mean(`Revenue (Millions)`), Rating_Avg = mean(Rating),
+              Metascore_Avg = mean(Metascore)) %>%
+    mutate(Genre = "Fantasy")
+
+comedy<- imdb_clean %>%
+    filter(comedy == TRUE) %>%
+    summarize (Revenue_Avg = mean(`Revenue (Millions)`), Rating_Avg = mean(Rating),
+               Metascore_Avg = mean(Metascore)) %>%
+    mutate(Genre = "Comedy")
+
+romance<- imdb_clean %>%
+    filter(romance== TRUE) %>%
+    summarize(Revenue_Avg = mean(`Revenue (Millions)`), Rating_Avg = mean(Rating),
+              Metascore_Avg = mean(Metascore)) %>%
+    mutate(Genre = "Romance")
+
+crime<- imdb_clean %>%
+    filter(crime== TRUE) %>%
+    summarize(Revenue_Avg = mean(`Revenue (Millions)`), Rating_Avg = mean(Rating),
+              Metascore_Avg = mean(Metascore)) %>%
+    mutate(Genre = "Crime")
+
+western<- imdb_clean %>%
+    filter(western == TRUE) %>%
+    summarize(Revenue_Avg = mean(`Revenue (Millions)`), Rating_Avg = mean(Rating),
+              Metascore_Avg = mean(Metascore)) %>%
+    mutate(Genre = "Western")    
+
+genres<-rbind(action, history, adventure, fantasy, comedy, romance, crime, western)
+genres
+
+ggplot(data=genres, aes(x=Genre, y=Revenue_Avg, fill= Genre)) +
+  geom_bar(stat="identity")+
+  labs(title="Genre vs. Revenue Average",
+         x = "Genre",
+         y = "Revenue Average") +
+  coord_flip()
+```
+Insight: The bar graph formulated below shows a clear distinction in revenue generated base on genre. Adventure, Action, Western and Fantasy all fall well over 100 million dollars in average revenue. While Romance, Comedy, Crime, and History, all fall a significant step down from that in the range of 40-70 million.
+
+####After learning this, I'd like to know if there is a pattern of certain genres receiving better audience ratings and reviews (IMDB Rating)? Perhaps this factor could account for the difference in revenues we see above. 
+
+```{r pipeline_rating}
+ggplot(data=genres, aes(x=Genre, y=Rating_Avg, fill= Genre)) +
+  geom_bar(stat="identity")+
+  labs(title="Genre vs. Rating Average",
+         x = "Genre",
+         y = "Rating Average") +
+  coord_flip()
+```
+Insight: Compared to the massive difference in revenue value, it might be surprising to see how neck-and-neck the rating average actually is for each category, none pulling significantly ahead of the pack.
+
+####Is there a correlation between Genre and critic reviews(Metascore)?
+```{r pipeline_metascore}
+ggplot(data=genres, aes(x=Genre, y=Metascore_Avg, fill= Genre)) +
+  geom_bar(stat="identity")+
+  labs(title="Genre vs. Metascore Average",
+         x = "Metascore Average",
+         y = "Genre") +
+  coord_flip()
+
+```
+
+Insight: Once again the metascore averages of fairly close for each genre, indicating that this did not have a large effect on the revenue differences we saw in the first bar graph. One notable insight on the difference between the rating graph and metascore graph is that critics consistently grade lower than the general population. The average rating score for every genre fell above a 6, while the majority of average metascores fell under 60 (equivalent to a 6 for rating system).
+
+
+
+#### Various forms of plots
+An important factor to consider when doing exploratory data analysis is the various plots available to us and how we use them. Suppose we want to take a look at how revenue for movies as changed over time. 
+
+The first thing we need to do is clean up our data. This is a good example of our data pipeline not going perfectly in order. If we want to summarize the mean of revenue spent per year, we have to do something with the entities for which revenue is not available (marked by NA). There are several ways to clean these values, such as predicting their value, filling them in with the mean of our available values, or dropping those entities  all together. In our example, we simply dropped those entities because we have enough data to do so without drastically changing our results.
+
+Now we can address our question. Are people spending more or less money on movies than they were several years ago? We can attempt to answer this question by creating a simple scatter plot of average movie revenue generated each year, including a line of best fit. This graph is provided below:
+
+
+```{r pipeline6}
+imdb_tab_rev<- imdb_tab%>% 
+  drop_na(`Revenue (Millions)`, Year)
+imdb_tab_rev
+  
+imdb_tab_rev %>%
+    group_by(Year) %>%
+    summarize(Revenue_Avg = mean(`Revenue (Millions)`))%>%
+    ggplot(aes(x=Year, y=Revenue_Avg)) +
+    ggtitle("Revenue Avg vs. Time")+
+    geom_point()+
+    geom_smooth()
+
+```
+
+It would appear from this data that the answer to our above question is that people have been spending less money on movies in the past few years. However, this is not the case! This is a prime example of being careful that what you are graphing and visualizing, is actually in response to the question you asked. What we actually learned here is that the amount of revenue generated PER MOVIE has decreased over time. But what we want to know is if the amount of revenue generated by movies total has changed over time. This can be done by graphing the sum value of revenue generated by movies in that year. the results of this scatter plot are shown below:
+
+
+```{r pipeline 6_2}
+imdb_tab_rev %>%
+      group_by(Year) %>%
+      summarize(Revenue_Sum = sum(`Revenue (Millions)`))%>%
+      ggplot(aes(x=Year, y=Revenue_Sum)) +
+      ggtitle("Revenue Sum vs. Time")+
+      geom_point()+
+      geom_smooth()
+
+```
+
+This graph clearly demonstrates that in total, people have actually spent more money on movies over time, this just appears to be divided among more movies than it previously spanned. 
+
+We may want to look at this same question from a new angle as well. For example, what does the distribution of these revenue values look like for each year. A box plot is perfect for addressing this sort of question:
+
+```{r pipeline_6_1}
+imdb_tab_rev %>%
+  ggplot(aes(group =Year,x=Year,y=`Revenue (Millions)`)) +
+  ggtitle("Revenue vs. Time")+
+  scale_y_continuous(labels = scales::dollar)+
+  geom_boxplot()
+```
+
+From this plot, we learn more about the statistical distribution and can see a clear upward skew in the data for revenue generated.
+
+#Hypothesis Testing and Linear Regression (Machine Learning)
+
+
+
+## look at metascore compared to rating (critic to person)
+```{r pipeline8}
+imdb_rated<- imdb_tab%>% 
+  drop_na(Metascore, Rating)
+  
+imdb_rated %>%
+    group_by(Rating)%>%
+    summarize(Metascore_Avg = mean(Metascore))%>%
+    ggplot(aes(x=Rating, y=Metascore_Avg)) +
+    ggtitle("Rating vs. Metascore")+
+    geom_point()+
+    geom_smooth()
+
+imdb_rated$Rating_rounded <- imdb_rated$Rating
+imdb_rated$Rating_rounded <- gsub("(.*)\\.(.*)","\\1",imdb_rated$Rating_rounded)
+
+imdb_rated %>%
+    ggplot(aes(x=factor(Rating_rounded), y=Metascore)) +
+    labs(title="Metascore vs Rating",
+         x = "Rating",
+         y = "Metascore") +
+    geom_violin()
+imdb_rated
+```
+
+
+### Metascore increases by roughly 10.562 by every point the rating increases
+### p value represents statistically significant relationship
+```{r pipeline9}
+imdb_rated
+imdb_rated<- imdb_rated%>% 
+  drop_na(Metascore, Rating)
+
+imdb_rated <- imdb_rated %>%
+  readr::type_convert(col_types = cols(Rating_rounded = col_integer()))
+
+imdb_fit <- lm(Metascore~Rating_rounded, data=imdb_rated)
+imdb_stats<-imdb_fit %>%
+  tidy()
+imdb_stats
+
+```
+
+```{r pipeline11}
+augmented_imdb <- imdb_fit %>%
+  augment()
+augmented_imdb %>% head()
+
+augmented_imdb %>%
+  ggplot(aes(x=factor(Rating_rounded),y=.resid)) +
+    geom_violin() +
+    theme(axis.text.x = element_text(angle=45))+
+    labs(title="Augmented Violin Plot",
+         x = "Rating",
+         y = "residual")
+
+```
+
+
+```{r pipeline12}
+imdb_rated<- imdb_rated%>% 
+  drop_na(`Revenue (Millions)`)
+
+imdb_rated$revenue_level <-ifelse(imdb_rated$`Revenue (Millions)` > 100,
+                   yes = "high revenue", no = "low revenue")
+
+imdb_rated$revenue_level <-ifelse(imdb_rated$revenue_level == "low revenue" & imdb_rated$`Revenue (Millions)` > 40,
+                   yes = "mid revenue", imdb_rated$revenue_level )
+
+imdb_rated
+imdb_rated %>%
+  ggplot(aes(x=Rating_rounded, y=Metascore, color = revenue_level)) +
+  geom_point() +
+  labs(title="Metascore vs Rating with Revenue Interaction",
+         x = "Rating",
+         y = "Metascore") +
+  geom_smooth(method=lm)
+```
+
+
+# 4. Uncovering Insights- Read the Data
+
+Once again, the data pipeline doesn't necessarily go in order. As you've seen we've been acquiring insights as we walked through the project, visualized our data and learned about the relationship between movie genres, revenue, ratings, critic scores, and more. Another data scientist may have taken the exact same dataset and learned entirely different insights- that's what makes data science such a deep and compelling area to explore. There's always more ground to cover- download your own dataset and see what you can uncover!
