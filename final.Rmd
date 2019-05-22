@@ -222,7 +222,9 @@ Insight: Once again the metascore averages of fairly close for each genre, indic
 
 An important factor to consider when doing exploratory data analysis is the various plots available to us and how we use them. Suppose we want to take a look at how revenue for movies as changed over time. 
 
-The first thing we need to do is clean up our data. This is a good example of our data pipeline not going perfectly in order. If we want to summarize the mean of revenue spent per year, we have to do something with the entities for which revenue is not available (marked by NA). There are several ways to clean these values, such as predicting their value, filling them in with the mean of our available values, or dropping those entities  all together. In our example, we simply dropped those entities because we have enough data to do so without drastically changing our results.
+The first thing we need to do is clean up our data. This is a good example of our data pipeline not going perfectly in order. If we want to summarize the mean of revenue spent per year, we have to do something with the entities for which revenue is not available (marked by NA). There are several ways to clean these values, such as predicting their value, filling them in with the mean of our available values, or dropping those entities  all together. In our example, we simply dropped those entities because we have enough data to do so without drastically changing our results. 
+
+If you're looking for a beginner's guide to data cleaning this site offers a great start: https://elitedatascience.com/data-cleaning. If you're more experienced using Data Science and looking for a deep dive on data cleaning Kaggle offers an excellent tutorial for this: https://www.kaggle.com/regivm/data-cleaning-and-eda-tutorial
 
 Now we can address our question. Are people spending more or less money on movies than they were several years ago? We can attempt to answer this question by creating a simple scatter plot of average movie revenue generated each year, including a line of best fit. This graph is provided below:
 
@@ -278,6 +280,7 @@ From this plot, we learn more about the statistical distribution and can see a c
 
 # 3. Hypothesis Testing and Linear Regression (Machine Learning)
 
+If you're unfamiliar with the concept of machine learning and would like to better understand it, the following resource offers a great visual representation to walk you through the basic concepts of this new and exciting field : http://www.r2d3.us/visual-intro-to-machine-learning-part-1/
 
 Let's take a look at a relationsihip in the dataset that it might be useful to run linear regression on: Metascore vs. Rating. It's useful for us to understand the relationship between critic ratings and audience ratings as metrics for judging a movie. In the plot below we  can show rating vs. metascore average to establish a baseline. Then we round ratings to be integers so we can factor on this variable and plot the violin plot for each rounded rating score vs. their metascore. 
 
