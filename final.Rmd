@@ -1,14 +1,11 @@
 ---
-title: "Final Project"
+title: "The Data Science Pipeline"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-### 300 word summary of data science pipeline
-# The Data Science Pipeline
 
 In the technological revolution we are currently experiencing, data is fuel - a ubiquitous, accessible, power source driving our society and modern innovations. The ability to extract, parse, interpret, visualize, and manipulate data could be likened to a modern-day superpower. Data scientists and statisticians work every day on challenges ranging from self-driving cars, to national security, to intelligent financial investments, or even developing a cure for cancer. 
 
@@ -27,9 +24,6 @@ What better way to learn than to walk through an example? I picked a subject mat
 
 
 
-
-
-### 100 words
 # 1. Data Curation, Parsing, and Management
 
 When people think about statisticians and data scientists developing revolutionary technologies, they often start by thinking about machine learning and AI - but this is skipping a lot of key steps. You'll find that you can actually run some basic but very intelligent ML algorithms and analysis with very little experience assuming you have a large and properly curated dataset. So let's begin there! Our dataset for the IMDB movies example was acquired from Kaggle.com at the following web address: https://www.kaggle.com/orgesleka/imdbmovies. 
@@ -39,8 +33,9 @@ This file was provided as a csv, a common form for publicly available datasets. 
 Because we are using a formally created dataset, we can simply download the file and formalize it using the read_csv() built in function for R. The built-in libraries we need for these type of built-in functions are included below. You may need to install these packages on your device to run this on your own computer. Now we can curate this dataset for our purposes.
 
 
-## Load libraries and URL
+
 ```{r load_data, message=FALSE}
+#Load libraries and URL
 library(RSQLite)
 library(tidyr)
 library(tidyverse)
@@ -122,13 +117,16 @@ In this section, we want to do some exploratory data analysis based on our curat
 In order to address this question, we need to filter our dataframe by genre and calculate the Average Revenue scores for each one. Once we have done this for all the genres in our set we add them to a new dataframe, and compare them against one another to identify relationships. The code below does some basic filtering and summarizing techniques to accomplish this. 
 
 
-#bar plot of revenue, rating, metascore by genre action,history, adventure, fantasy, comedy, romance, crime western
-## relationsihp between revenue and metascore vs rating
+
 
 ```{r pipeline7}
+# Drop entities with missing values for revenue, rating, and metascore because these are the attributes we're analyzing
 imdb_clean<- imdb_tab%>% 
   drop_na(`Revenue (Millions)`, Rating, Metascore)
 imdb_clean
+
+#create dataframe of revenue, rating, metascore by genre:
+#genres include: action,history, adventure, fantasy, comedy, romance, crime western
 
 action<- imdb_clean %>%
     filter(action == TRUE) %>%
@@ -181,6 +179,7 @@ western<- imdb_clean %>%
 genres<-rbind(action, history, adventure, fantasy, comedy, romance, crime, western)
 genres
 
+#Create a bar plot of genre vs. revenue average
 ggplot(data=genres, aes(x=Genre, y=Revenue_Avg, fill= Genre)) +
   geom_bar(stat="identity")+
   labs(title="Genre vs. Revenue Average",
@@ -188,11 +187,13 @@ ggplot(data=genres, aes(x=Genre, y=Revenue_Avg, fill= Genre)) +
          y = "Revenue Average") +
   coord_flip()
 ```
+
 Insight: The bar graph formulated below shows a clear distinction in revenue generated base on genre. Adventure, Action, Western and Fantasy all fall well over 100 million dollars in average revenue. While Romance, Comedy, Crime, and History, all fall a significant step down from that in the range of 40-70 million.
 
 ####After learning this, I'd like to know if there is a pattern of certain genres receiving better audience ratings and reviews (IMDB Rating)? Perhaps this factor could account for the difference in revenues we see above. 
 
 ```{r pipeline_rating}
+# Create bar plot of genres vs rating average
 ggplot(data=genres, aes(x=Genre, y=Rating_Avg, fill= Genre)) +
   geom_bar(stat="identity")+
   labs(title="Genre vs. Rating Average",
@@ -204,6 +205,7 @@ Insight: Compared to the massive difference in revenue value, it might be surpri
 
 ####Is there a correlation between Genre and critic reviews(Metascore)?
 ```{r pipeline_metascore}
+# Create bar plot of genres vs metascore average
 ggplot(data=genres, aes(x=Genre, y=Metascore_Avg, fill= Genre)) +
   geom_bar(stat="identity")+
   labs(title="Genre vs. Metascore Average",
@@ -216,8 +218,8 @@ ggplot(data=genres, aes(x=Genre, y=Metascore_Avg, fill= Genre)) +
 Insight: Once again the metascore averages of fairly close for each genre, indicating that this did not have a large effect on the revenue differences we saw in the first bar graph. One notable insight on the difference between the rating graph and metascore graph is that critics consistently grade lower than the general population. The average rating score for every genre fell above a 6, while the majority of average metascores fell under 60 (equivalent to a 6 for rating system).
 
 
+#### Be Careful with Plots
 
-#### Various forms of plots
 An important factor to consider when doing exploratory data analysis is the various plots available to us and how we use them. Suppose we want to take a look at how revenue for movies as changed over time. 
 
 The first thing we need to do is clean up our data. This is a good example of our data pipeline not going perfectly in order. If we want to summarize the mean of revenue spent per year, we have to do something with the entities for which revenue is not available (marked by NA). There are several ways to clean these values, such as predicting their value, filling them in with the mean of our available values, or dropping those entities  all together. In our example, we simply dropped those entities because we have enough data to do so without drastically changing our results.
@@ -226,10 +228,12 @@ Now we can address our question. Are people spending more or less money on movie
 
 
 ```{r pipeline6}
+# Clean data
 imdb_tab_rev<- imdb_tab%>% 
   drop_na(`Revenue (Millions)`, Year)
-imdb_tab_rev
-  
+
+
+#plot revenue avg vs time  
 imdb_tab_rev %>%
     group_by(Year) %>%
     summarize(Revenue_Avg = mean(`Revenue (Millions)`))%>%
@@ -244,6 +248,8 @@ It would appear from this data that the answer to our above question is that peo
 
 
 ```{r pipeline 6_2}
+
+#plot revenue sum vs time
 imdb_tab_rev %>%
       group_by(Year) %>%
       summarize(Revenue_Sum = sum(`Revenue (Millions)`))%>%
@@ -259,6 +265,7 @@ This graph clearly demonstrates that in total, people have actually spent more m
 We may want to look at this same question from a new angle as well. For example, what does the distribution of these revenue values look like for each year. A box plot is perfect for addressing this sort of question:
 
 ```{r pipeline_6_1}
+#plot revenue sum vs time in box plot
 imdb_tab_rev %>%
   ggplot(aes(group =Year,x=Year,y=`Revenue (Millions)`)) +
   ggtitle("Revenue vs. Time")+
@@ -268,15 +275,18 @@ imdb_tab_rev %>%
 
 From this plot, we learn more about the statistical distribution and can see a clear upward skew in the data for revenue generated.
 
-#Hypothesis Testing and Linear Regression (Machine Learning)
+
+# 3. Hypothesis Testing and Linear Regression (Machine Learning)
 
 
+Let's take a look at a relationsihip in the dataset that it might be useful to run linear regression on: Metascore vs. Rating. It's useful for us to understand the relationship between critic ratings and audience ratings as metrics for judging a movie. In the plot below we  can show rating vs. metascore average to establish a baseline. Then we round ratings to be integers so we can factor on this variable and plot the violin plot for each rounded rating score vs. their metascore. 
 
-## look at metascore compared to rating (critic to person)
 ```{r pipeline8}
+# Clean data for metascore and rating
 imdb_rated<- imdb_tab%>% 
   drop_na(Metascore, Rating)
-  
+
+#plot rating vs. metascore average
 imdb_rated %>%
     group_by(Rating)%>%
     summarize(Metascore_Avg = mean(Metascore))%>%
@@ -285,29 +295,32 @@ imdb_rated %>%
     geom_point()+
     geom_smooth()
 
+# Round ratings in order to factor this attribute
 imdb_rated$Rating_rounded <- imdb_rated$Rating
 imdb_rated$Rating_rounded <- gsub("(.*)\\.(.*)","\\1",imdb_rated$Rating_rounded)
 
+# Plot metascore vs rating as violin plot
 imdb_rated %>%
     ggplot(aes(x=factor(Rating_rounded), y=Metascore)) +
     labs(title="Metascore vs Rating",
          x = "Rating",
          y = "Metascore") +
     geom_violin()
-imdb_rated
+
 ```
 
+Now we want to fit a linear regression model to this relationship and get a better picture of the statistics so we can gain insights from that relationship.
 
-### Metascore increases by roughly 10.562 by every point the rating increases
-### p value represents statistically significant relationship
 ```{r pipeline9}
-imdb_rated
+# Clean data
 imdb_rated<- imdb_rated%>% 
   drop_na(Metascore, Rating)
 
+# Convert rating rounded column to integer for linear regression analysis
 imdb_rated <- imdb_rated %>%
   readr::type_convert(col_types = cols(Rating_rounded = col_integer()))
 
+# fit linear regression model to metascore vs. rating
 imdb_fit <- lm(Metascore~Rating_rounded, data=imdb_rated)
 imdb_stats<-imdb_fit %>%
   tidy()
@@ -315,11 +328,21 @@ imdb_stats
 
 ```
 
+
+### What can we learn from this?
+
+Insight : The data shown in exercise two shows the relationship between Rating and life Metascore in terms of estimate, std error, p-value, etc. According to the estimate statistic,  Metascore increases by roughly 11.76 for each point rating increases.
+
+We can also confirm from this that we would like to reject the null hypothesis of no relationship between Rating and Metascore because the p value for Rating is approximately 1.15e-101, which clearly demonstrates a statistically significant relationship.
+
+Next, we use the built-in augment function so that we can plot the ratings vs residuals. 
 ```{r pipeline11}
+#augment fitted model
 augmented_imdb <- imdb_fit %>%
   augment()
 augmented_imdb %>% head()
 
+#create a rating vs. residuals augmented violin plot
 augmented_imdb %>%
   ggplot(aes(x=factor(Rating_rounded),y=.resid)) +
     geom_violin() +
@@ -329,27 +352,7 @@ augmented_imdb %>%
          y = "residual")
 
 ```
-
-
-```{r pipeline12}
-imdb_rated<- imdb_rated%>% 
-  drop_na(`Revenue (Millions)`)
-
-imdb_rated$revenue_level <-ifelse(imdb_rated$`Revenue (Millions)` > 100,
-                   yes = "high revenue", no = "low revenue")
-
-imdb_rated$revenue_level <-ifelse(imdb_rated$revenue_level == "low revenue" & imdb_rated$`Revenue (Millions)` > 40,
-                   yes = "mid revenue", imdb_rated$revenue_level )
-
-imdb_rated
-imdb_rated %>%
-  ggplot(aes(x=Rating_rounded, y=Metascore, color = revenue_level)) +
-  geom_point() +
-  labs(title="Metascore vs Rating with Revenue Interaction",
-         x = "Rating",
-         y = "Metascore") +
-  geom_smooth(method=lm)
-```
+This plot looks, as expected, such that the residuals tend from positive values toward negative values over time as they move closer to and then farther away from expected values. 
 
 
 # 4. Uncovering Insights- Read the Data
